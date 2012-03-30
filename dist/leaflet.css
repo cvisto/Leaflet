@@ -316,7 +316,8 @@ a.leaflet-active {
 	-o-transform: rotate(45deg);
 	transform: rotate(45deg);
 	}
-.leaflet-popup-close-button .leaflet-marker-iconlabel-closebutton {
+.leaflet-popup-close-button,
+.leaflet-marker-iconlabel-closebutton {
 	position: absolute;
 	top: 8px;
 	right: 8px;
@@ -367,7 +368,8 @@ a.leaflet-active {
 .leaflet-marker-iconlabel {
 	font: 12px/1.4 "Helvetica Neue", Arial, Helvetica, sans-serif;
 	}
-.leaflet-popup-close-button .leaflet-marker-iconlabel-closebutton {
+.leaflet-popup-close-button,
+.leaflet-marker-iconlabel-closebutton {
 	background: white url(images/popup-close.png);
 	}
 .leaflet-marker-iconlabel {
