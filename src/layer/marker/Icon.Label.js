@@ -64,11 +64,18 @@ L.Icon.Label = L.Icon.extend({
 
         //show close button and bind handler
         if (this.options.closeButton) {
-            var closeButton = L.DomUtil.create('a', 'leaflet-marker-iconlabel-closebutton ' + this.options.closeButtonClassName, labelWrapper);
+            var fn = this.options.onCloseButtonClick,
+                closeButton = L.DomUtil.create('a', 'leaflet-marker-iconlabel-closebutton ' + this.options.closeButtonClassName, labelWrapper);
             closeButton.href = '#close';
-            if (this.options.onCloseButtonClick && typeof this.options.onCloseButtonClick === 'function') {
-                L.DomEvent.addListener(closeButton, 'click', this.options.onCloseButtonClick);
-            }
+            
+            L.DomEvent.addListener(closeButton, 'click', function(e) {
+                L.DomEvent.stop(e);
+                if (fn && typeof fn === 'function') {
+                    fn();
+                } else {
+                    this.parentNode.style.display = 'none';
+                }
+            });
         }
 
 		//set up label's styles
