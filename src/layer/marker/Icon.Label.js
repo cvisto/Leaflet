@@ -68,7 +68,7 @@ L.Icon.Label = L.Icon.extend({
                 closeButton = L.DomUtil.create('a', 'leaflet-marker-iconlabel-closebutton ' + this.options.closeButtonClassName, labelWrapper);
             closeButton.href = '#close';
             
-            L.DomEvent.addListener(closeButton, 'click', function(e) {
+            L.DomEvent.addListener(closeButton, 'click', function (e) {
                 L.DomEvent.stop(e);
                 if (fn && typeof fn === 'function') {
                     fn();
