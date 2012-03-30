@@ -25,6 +25,28 @@ L.Mixin.Events = {
 		return (k in this) && (type in this[k]) && (this[k][type].length > 0);
 	},
 
+    hasEventListener: function (/*String*/ type, /*Function*/ fn, /*(optional) Object*/ context) {
+        if (!this.hasEventListeners(type)) {
+            return false;
+        }
+
+        for (var i = 0, events = this._leaflet_events, len = events[type].length; i < len; i++) {
+            if ((events[type][i].action === fn) &&
+                (!context || (events[type][i].context === context))) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    clearEventListeners: function (/*String*/ type) {
+        if (this._leaflet_events) {
+            delete this._leaflet_events[type];
+        }
+
+        return this;
+    },
+
 	removeEventListener: function (/*String*/ type, /*Function*/ fn, /*(optional) Object*/ context) {
 		if (!this.hasEventListeners(type)) {
 			return this;
