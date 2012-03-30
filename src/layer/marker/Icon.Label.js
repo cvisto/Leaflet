@@ -1,3 +1,9 @@
+/*
+     Author: Artem Groznykh
+Description: icon label with close button
+             based on https://github.com/jacobtoye/Leaflet.git/iconLabel
+*/
+
 L.Icon.Label = L.Icon.extend({
 	options: {
 		/*
@@ -5,6 +11,8 @@ L.Icon.Label = L.Icon.extend({
 		wrapperAnchor: (Point) (position of icon and label relative to Lat/Lng)
 		iconAnchor: (Point) (top left position of icon within wrapper)
 		labelText: (String) (label's text component, if this is null the element will not be created)
+		closeButton: (boolean) (show close button on label top right corner)
+		onCloseButtonClick: (function) (fires when user clicks close button on label)
 		*/
 		/* Icon options:
 		iconUrl: (String) (required)
@@ -14,7 +22,8 @@ L.Icon.Label = L.Icon.extend({
 		shadowUrl: (Point) (no shadow by default)
 		shadowSize: (Point)
 		*/
-		labelClassName: ''
+		labelClassName: '',
+        closeButtonClassName: ''
 	},
 	
 	initialize: function (options) {
@@ -37,35 +46,49 @@ L.Icon.Label = L.Icon.extend({
 	},
 
 	_createLabel: function (img) {
-		if (!this.options.labelText) {
-			return img;
-		}
+		var iconWrapper = document.createElement('div');
+        iconWrapper.appendChild(img);
 
-		var wrapper = document.createElement('div'),
-			label = document.createElement('span');
+        var labelWrapper = L.DomUtil.create('div', '', iconWrapper),
+            label = L.DomUtil.create('span', '', labelWrapper);
 
-		label.className = 'leaflet-marker-iconlabel ' + this.options.labelClassName;
+        labelWrapper.className = 'leaflet-marker-iconlabel ' + this.options.labelClassName;
 
-		label.innerHTML = this.options.labelText;
+        //do not show label if there is no text
+        if (this.options.labelText) {
+            label.innerHTML = this.options.labelText;
+        } else {
+            labelWrapper.style.display = 'none';
+        }
+
+        //show close button and bind handler
+        if (this.options.closeButton) {
+            var closeButton = L.DomUtil.create('a', 'leaflet-marker-iconlabel-closebutton '+this.options.closeButtonClassName, labelWrapper);
+            closeButton.href = '#close';
+            if (this.options.onCloseButtonClick && typeof this.options.onCloseButtonClick === 'function') {
+                L.DomEvent.addListener(closeButton, 'click', this.options.onCloseButtonClick);
+            }
+        }
 
 		//set up label's styles
-		label.style.marginLeft = this.options.labelAnchor.x + 'px';
-		label.style.marginTop = this.options.labelAnchor.y + 'px';
+		labelWrapper.style.marginLeft = this.options.labelAnchor.x + 'px';
+		labelWrapper.style.marginTop = this.options.labelAnchor.y + 'px';
 		
 		//set up wrapper anchor
-		wrapper.style.marginLeft = (-this.options.wrapperAnchor.x) + 'px';
-		wrapper.style.marginTop = (-this.options.wrapperAnchor.y) + 'px';
+		iconWrapper.style.marginLeft = (-this.options.wrapperAnchor.x) + 'px';
+		iconWrapper.style.marginTop = (-this.options.wrapperAnchor.y) + 'px';
 
-		wrapper.className = 'leaflet-marker-icon-wrapper';
+        //do not show icon wrapper div
+        iconWrapper.style.overflow = 'visible';
+        iconWrapper.style.height = '0';
+
+		iconWrapper.className = 'leaflet-marker-icon-wrapper';
 		
 		//reset icons margins (as super makes them -ve)
 		img.style.marginLeft = this.options.iconAnchor.x + 'px';
 		img.style.marginTop = this.options.iconAnchor.y + 'px';
 		
-		wrapper.appendChild(img);
-		wrapper.appendChild(label);
-
-		return wrapper;
+		return iconWrapper;
 	}
 });
 
@@ -88,6 +111,12 @@ L.Icon.Label.Default = L.Icon.Label.extend({
 		
 		//label's text component, if this is null the element will not be created
 		labelText: null,
+
+        //show closeButton on label or not
+        closeButton: false,
+
+        //fires when closeButton clicked
+        onCloseButtonClick: undefined,
 		
 		/* From L.Icon.Default */
 		iconUrl: L.ROOT_URL + 'images/marker.png',
