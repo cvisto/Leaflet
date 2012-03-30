@@ -20,7 +20,7 @@ L.Mixin.Events = {
 		return (k in this) && (type in this[k]) && (this[k][type].length > 0);
 	},
 
-    hasEventListener: function(/*String*/ type, /*Function*/ fn, /*(optional) Object*/ context){
+    hasEventListener: function (/*String*/ type, /*Function*/ fn, /*(optional) Object*/ context) {
         if (!this.hasEventListeners(type)) {
             return false;
         }
