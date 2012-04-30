@@ -42,12 +42,31 @@ L.Polyline = L.Path.extend({
 
 	setLatLngs: function (latlngs) {
 		this._latlngs = latlngs;
+        if (this.editing && this.editing.enabled()) {
+            this.editing.updateMarkers();
+        }
 		return this.redraw();
 	},
 
 	addLatLng: function (latlng) {
-		this._latlngs.push(latlng);
-		return this.redraw();
+        if (this.editing && this.editing.enabled()) {
+            if (this.getLatLngs().length < 2) {
+                this._latlngs.push(latlng);
+                this.editing.updateMarkers();
+                this.fire('edit');
+                return this.redraw();
+            } else {
+                var marker = this.editing._markers[0]._middleLeft;
+                marker.fire('dragstart', this.editing);
+                marker.setLatLng(latlng);
+                var result = this.editing._onMarkerDrag({target: marker});
+                marker.fire('dragend');
+                return result;
+            }
+        } else {
+            this._latlngs.push(latlng);
+            return this.redraw();
+        }
 	},
 
 	spliceLatLngs: function (index, howMany) {

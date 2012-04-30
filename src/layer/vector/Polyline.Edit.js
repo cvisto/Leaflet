@@ -34,7 +34,9 @@ L.Handler.PolyEdit = L.Handler.extend({
 	},
 
 	_initMarkers: function () {
-		this._markerGroup = new L.LayerGroup();
+		if (!this._markerGroup) {
+            this._markerGroup = new L.LayerGroup();
+        }
 		this._markers = [];
 
 		var latlngs = this._poly._latlngs,
@@ -51,7 +53,7 @@ L.Handler.PolyEdit = L.Handler.extend({
 
 		var markerLeft, markerRight;
 
-		for (i = 0, j = len - 1; i < len; j = i++) {
+		for (i = 0, j = len - 1; i < len && this._markers.length > 1; j = i++) {
 			if (i === 0 && !(L.Polygon && (this._poly instanceof L.Polygon))) {
 				continue;
 			}
@@ -97,7 +99,7 @@ L.Handler.PolyEdit = L.Handler.extend({
 			marker._middleRight.setLatLng(this._getMiddleLatLng(marker, marker._next));
 		}
 
-		this._poly.redraw();
+		return this._poly.redraw();
 	},
 
 	_onMarkerClick: function (e) {
