@@ -50,8 +50,8 @@ L.Mixin.Events = {
             return false;
         }
 
-        for (var i = 0, events = this._leaflet_events, len = events[type].length; i < len; i++) {
-            if ((events[type][i].action === fn) &&
+        for (var i = 0, events = this[key], len = events[type].length; i < len; i++) {
+            if ((!fn || (events[type][i].action === fn)) &&
                 (!context || (events[type][i].context === context))) {
                 return true;
             }
