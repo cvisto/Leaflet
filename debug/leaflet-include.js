@@ -51,6 +51,7 @@
 		'map/handler/Map.DoubleClickZoom.js',
 		'map/handler/Map.ScrollWheelZoom.js',
 		'map/handler/Map.BoxZoom.js',
+		'map/handler/Map.Keyboard.js',
 
 		'layer/LayerGroup.js',
 		'layer/FeatureGroup.js',
@@ -107,9 +108,10 @@
 	}
 
 	var path = getSrcUrl();
-	for (var i = 0; i < scripts.length; i++) {
-		document.writeln("<script type='text/javascript' src='" + path + "../src/" + scripts[i] + "'></script>");
+    for (var i = 0; i < scripts.length; i++) {
+		document.writeln("<script src='" + path + scripts[i] + "'></script>");
 	}
+    document.writeln('<script>L.Icon.Default.imagePath = "' + path + '../dist/images";</script>');
 })();
 
 function getRandomLatLng(map) {
