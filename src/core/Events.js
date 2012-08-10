@@ -110,7 +110,7 @@ L.Mixin.Events = {
 			listeners[i].action.call(listeners[i].context || this, event);
 		}
 
-        listeners = this._leaflet_events[type];
+        listeners = this[key][type];
         for (i = listeners.length - 1; i >= 0; i--) {
             if (listeners[i].once) {
                 listeners.splice(i, 1);
