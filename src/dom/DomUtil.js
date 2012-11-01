@@ -15,7 +15,7 @@ L.DomUtil = {
 			value = el.currentStyle[style];
 		}
 
-		if (!value || value === 'auto') {
+		if ((!value || value === 'auto') && document.defaultView) {
 			var css = document.defaultView.getComputedStyle(el, null);
 			value = css ? css[style] : null;
 		}
@@ -29,10 +29,11 @@ L.DomUtil = {
 			left = 0,
 			el = element,
 			docBody = document.body,
-			pos;
+			pos,
+			ie7 = L.Browser.ie7;
 
 		do {
-			top += el.offsetTop || 0;
+			top  += el.offsetTop  || 0;
 			left += el.offsetLeft || 0;
 			pos = L.DomUtil.getStyle(el, 'position');
 
@@ -55,10 +56,30 @@ L.DomUtil = {
 			top  -= el.scrollTop  || 0;
 			left -= el.scrollLeft || 0;
 
+			//Webkit (and ie <= 7) handles RTL scrollLeft different to everyone else
+			// https://code.google.com/p/closure-library/source/browse/trunk/closure/goog/style/bidi.js
+			if (!L.DomUtil.documentIsLtr() && (L.Browser.webkit || ie7)) {
+				left += el.scrollWidth - el.clientWidth;
+
+				//ie7 shows the scrollbar by default and provides clientWidth counting it, so we need to add it back in if it is visible
+				// Scrollbar is on the left as we are RTL
+				if (ie7 && L.DomUtil.getStyle(el, 'overflow-y') !== 'hidden' && L.DomUtil.getStyle(el, 'overflow') !== 'hidden') {
+					left += 17;
+				}
+			}
+
 			el = el.parentNode;
 		} while (el);
 
 		return new L.Point(left, top);
+	},
+
+	documentIsLtr: function () {
+		if (!L.DomUtil._docIsLtrCached) {
+			L.DomUtil._docIsLtrCached = true;
+			L.DomUtil._docIsLtr = L.DomUtil.getStyle(document.body, 'direction') === "ltr";
+		}
+		return L.DomUtil._docIsLtr;
 	},
 
 	create: function (tagName, className, container) {
@@ -118,7 +139,7 @@ L.DomUtil = {
 		if ('opacity' in el.style) {
 			el.style.opacity = value;
 
-		} else if (L.Browser.ie) {
+		} else if ('filter' in el.style) {
 
 			var filter = false,
 				filterName = 'DXImageTransform.Microsoft.Alpha';
@@ -163,11 +184,10 @@ L.DomUtil = {
 
 	getScaleString: function (scale, origin) {
 
-		var preTranslateStr = L.DomUtil.getTranslateString(origin),
-			scaleStr = ' scale(' + scale + ') ',
-			postTranslateStr = L.DomUtil.getTranslateString(origin.multiplyBy(-1));
+		var preTranslateStr = L.DomUtil.getTranslateString(origin.add(origin.multiplyBy(-1 * scale))),
+		    scaleStr = ' scale(' + scale + ') ';
 
-		return preTranslateStr + scaleStr + postTranslateStr;
+		return preTranslateStr + scaleStr;
 	},
 
 	setPosition: function (el, point, disable3D) { // (HTMLElement, Point[, Boolean])
