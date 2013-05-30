@@ -22,7 +22,7 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 	},
 
 	setStyle: function (style) {
-		L.Util.setOptions(this, style);
+		L.setOptions(this, style);
 
 		if (this._map) {
 			this._updateStyle();
@@ -35,6 +35,10 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 		map
 		    .off('viewreset', this.projectLatlngs, this)
 		    .off('moveend', this._updatePath, this);
+
+		if (this.options.clickable) {
+			this._map.off('click', this._onClick, this);
+		}
 
 		this._requestUpdate();
 
@@ -96,23 +100,19 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 		if (this._checkIfEmpty()) { return; }
 
 		var ctx = this._ctx,
-			options = this.options;
+		    options = this.options;
 
 		this._drawPath();
 		ctx.save();
 		this._updateStyle();
 
 		if (options.fill) {
-			if (options.fillOpacity < 1) {
-				ctx.globalAlpha = options.fillOpacity;
-			}
+			ctx.globalAlpha = options.fillOpacity;
 			ctx.fill();
 		}
 
 		if (options.stroke) {
-			if (options.opacity < 1) {
-				ctx.globalAlpha = options.opacity;
-			}
+			ctx.globalAlpha = options.opacity;
 			ctx.stroke();
 		}
 
@@ -123,8 +123,8 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 
 	_initEvents: function () {
 		if (this.options.clickable) {
-			// TODO hand cursor
-			// TODO mouseover, mouseout, dblclick
+			// TODO dblclick
+			this._map.on('mousemove', this._onMouseMove, this);
 			this._map.on('click', this._onClick, this);
 		}
 	},
@@ -133,21 +133,37 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 		if (this._containsPoint(e.layerPoint)) {
 			this.fire('click', e);
 		}
+	},
+
+	_onMouseMove: function (e) {
+		if (!this._map || this._map._animatingZoom) { return; }
+
+		// TODO don't do on each move
+		if (this._containsPoint(e.layerPoint)) {
+			this._ctx.canvas.style.cursor = 'pointer';
+			this._mouseInside = true;
+			this.fire('mouseover', e);
+
+		} else if (this._mouseInside) {
+			this._ctx.canvas.style.cursor = '';
+			this._mouseInside = false;
+			this.fire('mouseout', e);
+		}
 	}
 });
 
 L.Map.include((L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? {} : {
 	_initPathRoot: function () {
 		var root = this._pathRoot,
-			ctx;
+		    ctx;
 
 		if (!root) {
-			root = this._pathRoot = document.createElement("canvas");
+			root = this._pathRoot = document.createElement('canvas');
 			root.style.position = 'absolute';
 			ctx = this._canvasCtx = root.getContext('2d');
 
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
+			ctx.lineCap = 'round';
+			ctx.lineJoin = 'round';
 
 			this._panes.overlayPane.appendChild(root);
 
@@ -162,16 +178,14 @@ L.Map.include((L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? {} 
 	},
 
 	_updateCanvasViewport: function () {
-		if (this._pathZooming) {
-			//Don't redraw while zooming. See _updateSvgViewport for more details
-			return;
-		}
+		// don't redraw while zooming. See _updateSvgViewport for more details
+		if (this._pathZooming) { return; }
 		this._updatePathViewport();
 
 		var vp = this._pathViewport,
-			min = vp.min,
-			size = vp.max.subtract(min),
-			root = this._pathRoot;
+		    min = vp.min,
+		    size = vp.max.subtract(min),
+		    root = this._pathRoot;
 
 		//TODO check if this works properly on mobile webkit
 		L.DomUtil.setPosition(root, min);

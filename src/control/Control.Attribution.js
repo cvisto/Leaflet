@@ -1,11 +1,15 @@
+/*
+ * L.Control.Attribution is used for displaying attribution on the map (added by default).
+ */
+
 L.Control.Attribution = L.Control.extend({
 	options: {
 		position: 'bottomright',
-		prefix: 'Powered by <a href="http://leaflet.cloudmade.com">Leaflet</a>'
+		prefix: '<a href="http://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>'
 	},
 
 	initialize: function (options) {
-		L.Util.setOptions(this, options);
+		L.setOptions(this, options);
 
 		this._attributions = {};
 	},
@@ -15,8 +19,8 @@ L.Control.Attribution = L.Control.extend({
 		L.DomEvent.disableClickPropagation(this._container);
 
 		map
-			.on('layeradd', this._onLayerAdd, this)
-			.on('layerremove', this._onLayerRemove, this);
+		    .on('layeradd', this._onLayerAdd, this)
+		    .on('layerremove', this._onLayerRemove, this);
 
 		this._update();
 
@@ -25,8 +29,8 @@ L.Control.Attribution = L.Control.extend({
 
 	onRemove: function (map) {
 		map
-			.off('layeradd', this._onLayerAdd)
-			.off('layerremove', this._onLayerRemove);
+		    .off('layeradd', this._onLayerAdd)
+		    .off('layerremove', this._onLayerRemove);
 
 	},
 
@@ -52,8 +56,10 @@ L.Control.Attribution = L.Control.extend({
 	removeAttribution: function (text) {
 		if (!text) { return; }
 
-		this._attributions[text]--;
-		this._update();
+		if (this._attributions[text]) {
+			this._attributions[text]--;
+			this._update();
+		}
 
 		return this;
 	},
@@ -64,7 +70,7 @@ L.Control.Attribution = L.Control.extend({
 		var attribs = [];
 
 		for (var i in this._attributions) {
-			if (this._attributions.hasOwnProperty(i) && this._attributions[i]) {
+			if (this._attributions[i]) {
 				attribs.push(i);
 			}
 		}
@@ -78,7 +84,7 @@ L.Control.Attribution = L.Control.extend({
 			prefixAndAttribs.push(attribs.join(', '));
 		}
 
-		this._container.innerHTML = prefixAndAttribs.join(' &#8212; ');
+		this._container.innerHTML = prefixAndAttribs.join(' | ');
 	},
 
 	_onLayerAdd: function (e) {

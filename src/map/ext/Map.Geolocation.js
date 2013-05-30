@@ -1,5 +1,5 @@
 /*
- * Provides L.Map with convenient shortcuts for W3C geolocation.
+ * Provides L.Map with convenient shortcuts for using browser geolocation features.
  */
 
 L.Map.include({
@@ -14,21 +14,22 @@ L.Map.include({
 
 	locate: function (/*Object*/ options) {
 
-		options = this._locationOptions = L.Util.extend(this._defaultLocateOptions, options);
+		options = this._locateOptions = L.extend(this._defaultLocateOptions, options);
 
 		if (!navigator.geolocation) {
 			this._handleGeolocationError({
 				code: 0,
-				message: "Geolocation not supported."
+				message: 'Geolocation not supported.'
 			});
 			return this;
 		}
 
-		var onResponse = L.Util.bind(this._handleGeolocationResponse, this),
-			onError = L.Util.bind(this._handleGeolocationError, this);
+		var onResponse = L.bind(this._handleGeolocationResponse, this),
+			onError = L.bind(this._handleGeolocationError, this);
 
 		if (options.watch) {
-			this._locationWatchId = navigator.geolocation.watchPosition(onResponse, onError, options);
+			this._locationWatchId =
+			        navigator.geolocation.watchPosition(onResponse, onError, options);
 		} else {
 			navigator.geolocation.getCurrentPosition(onResponse, onError, options);
 		}
@@ -39,48 +40,52 @@ L.Map.include({
 		if (navigator.geolocation) {
 			navigator.geolocation.clearWatch(this._locationWatchId);
 		}
+		if (this._locateOptions) {
+			this._locateOptions.setView = false;
+		}
 		return this;
 	},
 
 	_handleGeolocationError: function (error) {
 		var c = error.code,
-			message = error.message ||
-				(c === 1 ? "permission denied" :
-				(c === 2 ? "position unavailable" : "timeout"));
+		    message = error.message ||
+		            (c === 1 ? 'permission denied' :
+		            (c === 2 ? 'position unavailable' : 'timeout'));
 
-		if (this._locationOptions.setView && !this._loaded) {
+		if (this._locateOptions.setView && !this._loaded) {
 			this.fitWorld();
 		}
 
 		this.fire('locationerror', {
 			code: c,
-			message: "Geolocation error: " + message + "."
+			message: 'Geolocation error: ' + message + '.'
 		});
 	},
 
 	_handleGeolocationResponse: function (pos) {
-		var latAccuracy = 180 * pos.coords.accuracy / 4e7,
-			lngAccuracy = latAccuracy * 2,
+		var lat = pos.coords.latitude,
+		    lng = pos.coords.longitude,
+		    latlng = new L.LatLng(lat, lng),
 
-			lat = pos.coords.latitude,
-			lng = pos.coords.longitude,
-			latlng = new L.LatLng(lat, lng),
+		    latAccuracy = 180 * pos.coords.accuracy / 40075017,
+		    lngAccuracy = latAccuracy / Math.cos(L.LatLng.DEG_TO_RAD * lat),
 
-			sw = new L.LatLng(lat - latAccuracy, lng - lngAccuracy),
-			ne = new L.LatLng(lat + latAccuracy, lng + lngAccuracy),
-			bounds = new L.LatLngBounds(sw, ne),
+		    bounds = L.latLngBounds(
+		            [lat - latAccuracy, lng - lngAccuracy],
+		            [lat + latAccuracy, lng + lngAccuracy]),
 
-			options = this._locationOptions;
+		    options = this._locateOptions;
 
 		if (options.setView) {
 			var zoom = Math.min(this.getBoundsZoom(bounds), options.maxZoom);
 			this.setView(latlng, zoom);
 		}
 
-		this.fire('locationfound', {
+		var event = L.extend({
 			latlng: latlng,
-			bounds: bounds,
-			accuracy: pos.coords.accuracy
-		});
+			bounds: bounds
+		}, pos.coords);
+
+		this.fire('locationfound', event);
 	}
 });

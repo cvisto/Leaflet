@@ -79,15 +79,29 @@ L.Point.prototype = {
 		point = L.point(point);
 
 		var x = point.x - this.x,
-			y = point.y - this.y;
+		    y = point.y - this.y;
 
 		return Math.sqrt(x * x + y * y);
 	},
 
+	equals: function (point) {
+		point = L.point(point);
+
+		return point.x === this.x &&
+		       point.y === this.y;
+	},
+
+	contains: function (point) {
+		point = L.point(point);
+
+		return Math.abs(point.x) <= Math.abs(this.x) &&
+		       Math.abs(point.y) <= Math.abs(this.y);
+	},
+
 	toString: function () {
 		return 'Point(' +
-				L.Util.formatNum(this.x) + ', ' +
-				L.Util.formatNum(this.y) + ')';
+		        L.Util.formatNum(this.x) + ', ' +
+		        L.Util.formatNum(this.y) + ')';
 	}
 };
 
@@ -95,10 +109,10 @@ L.point = function (x, y, round) {
 	if (x instanceof L.Point) {
 		return x;
 	}
-	if (x instanceof Array) {
+	if (L.Util.isArray(x)) {
 		return new L.Point(x[0], x[1]);
 	}
-	if (isNaN(x)) {
+	if (x === undefined || x === null) {
 		return x;
 	}
 	return new L.Point(x, y, round);

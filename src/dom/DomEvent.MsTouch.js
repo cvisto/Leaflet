@@ -1,4 +1,8 @@
-L.Util.extend(L.DomEvent, {
+/*
+ * Extends L.DomEvent to provide touch support for Internet Explorer and Windows-based devices.
+ */
+
+L.extend(L.DomEvent, {
 
 	_msTouches: [],
 	_msDocumentListener: false,
@@ -22,7 +26,7 @@ L.Util.extend(L.DomEvent, {
 
 	addMsTouchListenerStart: function (obj, type, handler, id) {
 		var pre = '_leaflet_',
-			touches = this._msTouches;
+		    touches = this._msTouches;
 
 		var cb = function (e) {
 
@@ -46,8 +50,8 @@ L.Util.extend(L.DomEvent, {
 		obj[pre + 'touchstart' + id] = cb;
 		obj.addEventListener('MSPointerDown', cb, false);
 
-		//Need to also listen for end events to keep the _msTouches list accurate
-		//this needs to be on the body and never go away
+		// need to also listen for end events to keep the _msTouches list accurate
+		// this needs to be on the body and never go away
 		if (!this._msDocumentListener) {
 			var internalCb = function (e) {
 				for (var i = 0; i < touches.length; i++) {
@@ -68,15 +72,13 @@ L.Util.extend(L.DomEvent, {
 	},
 
 	addMsTouchListenerMove: function (obj, type, handler, id) {
-		var pre = '_leaflet_';
+		var pre = '_leaflet_',
+		    touches = this._msTouches;
 
-		var touches = this._msTouches;
-		var cb = function (e) {
+		function cb(e) {
 
-			//Don't fire touch moves when mouse isn't down
-			if (e.pointerType === e.MSPOINTER_TYPE_MOUSE && e.buttons === 0) {
-				return;
-			}
+			// don't fire touch moves when mouse isn't down
+			if (e.pointerType === e.MSPOINTER_TYPE_MOUSE && e.buttons === 0) { return; }
 
 			for (var i = 0; i < touches.length; i++) {
 				if (touches[i].pointerId === e.pointerId) {
@@ -89,7 +91,7 @@ L.Util.extend(L.DomEvent, {
 			e.changedTouches = [e];
 
 			handler(e);
-		};
+		}
 
 		obj[pre + 'touchmove' + id] = cb;
 		obj.addEventListener('MSPointerMove', cb, false);
@@ -99,7 +101,7 @@ L.Util.extend(L.DomEvent, {
 
 	addMsTouchListenerEnd: function (obj, type, handler, id) {
 		var pre = '_leaflet_',
-			touches = this._msTouches;
+		    touches = this._msTouches;
 
 		var cb = function (e) {
 			for (var i = 0; i < touches.length; i++) {

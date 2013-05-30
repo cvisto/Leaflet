@@ -1,3 +1,7 @@
+/*
+ * L.TileLayer.WMS is used for putting WMS tile layers on the map.
+ */
+
 L.TileLayer.WMS = L.TileLayer.extend({
 
 	defaultWmsParams: {
@@ -14,12 +18,13 @@ L.TileLayer.WMS = L.TileLayer.extend({
 
 		this._url = url;
 
-		var wmsParams = L.Util.extend({}, this.defaultWmsParams);
+		var wmsParams = L.extend({}, this.defaultWmsParams),
+		    tileSize = options.tileSize || this.options.tileSize;
 
 		if (options.detectRetina && L.Browser.retina) {
-			wmsParams.width = wmsParams.height = this.options.tileSize * 2;
+			wmsParams.width = wmsParams.height = tileSize * 2;
 		} else {
-			wmsParams.width = wmsParams.height = this.options.tileSize;
+			wmsParams.width = wmsParams.height = tileSize;
 		}
 
 		for (var i in options) {
@@ -31,7 +36,7 @@ L.TileLayer.WMS = L.TileLayer.extend({
 
 		this.wmsParams = wmsParams;
 
-		L.Util.setOptions(this, options);
+		L.setOptions(this, options);
 	},
 
 	onAdd: function (map) {
@@ -45,25 +50,25 @@ L.TileLayer.WMS = L.TileLayer.extend({
 	getTileUrl: function (tilePoint, zoom) { // (Point, Number) -> String
 
 		var map = this._map,
-			crs = map.options.crs,
-			tileSize = this.options.tileSize,
+		    crs = map.options.crs,
+		    tileSize = this.options.tileSize,
 
-			nwPoint = tilePoint.multiplyBy(tileSize),
-			sePoint = nwPoint.add(new L.Point(tileSize, tileSize)),
+		    nwPoint = tilePoint.multiplyBy(tileSize),
+		    sePoint = nwPoint.add([tileSize, tileSize]),
 
-			nw = crs.project(map.unproject(nwPoint, zoom)),
-			se = crs.project(map.unproject(sePoint, zoom)),
+		    nw = crs.project(map.unproject(nwPoint, zoom)),
+		    se = crs.project(map.unproject(sePoint, zoom)),
 
-			bbox = [nw.x, se.y, se.x, nw.y].join(','),
+		    bbox = [nw.x, se.y, se.x, nw.y].join(','),
 
-			url = L.Util.template(this._url, {s: this._getSubdomain(tilePoint)});
+		    url = L.Util.template(this._url, {s: this._getSubdomain(tilePoint)});
 
-		return url + L.Util.getParamString(this.wmsParams) + "&bbox=" + bbox;
+		return url + L.Util.getParamString(this.wmsParams, url) + '&bbox=' + bbox;
 	},
 
 	setParams: function (params, noRedraw) {
 
-		L.Util.extend(this.wmsParams, params);
+		L.extend(this.wmsParams, params);
 
 		if (!noRedraw) {
 			this.redraw();

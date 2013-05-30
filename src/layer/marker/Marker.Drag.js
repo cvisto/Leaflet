@@ -10,15 +10,22 @@ L.Handler.MarkerDrag = L.Handler.extend({
 	addHooks: function () {
 		var icon = this._marker._icon;
 		if (!this._draggable) {
-			this._draggable = new L.Draggable(icon, icon)
-				.on('dragstart', this._onDragStart, this)
-				.on('drag', this._onDrag, this)
-				.on('dragend', this._onDragEnd, this);
+			this._draggable = new L.Draggable(icon, icon);
 		}
+
+		this._draggable
+			.on('dragstart', this._onDragStart, this)
+			.on('drag', this._onDrag, this)
+			.on('dragend', this._onDragEnd, this);
 		this._draggable.enable();
 	},
 
 	removeHooks: function () {
+		this._draggable
+			.off('dragstart', this._onDragStart)
+			.off('drag', this._onDrag)
+			.off('dragend', this._onDragEnd);
+
 		this._draggable.disable();
 	},
 
@@ -26,18 +33,18 @@ L.Handler.MarkerDrag = L.Handler.extend({
 		return this._draggable && this._draggable._moved;
 	},
 
-	_onDragStart: function (e) {
+	_onDragStart: function () {
 		this._marker
-			.closePopup()
-			.fire('movestart')
-			.fire('dragstart');
+		    .closePopup()
+		    .fire('movestart')
+		    .fire('dragstart');
 	},
 
-	_onDrag: function (e) {
+	_onDrag: function () {
 		var marker = this._marker,
-			shadow = marker._shadow,
-			iconPos = L.DomUtil.getPosition(marker._icon),
-			latlng = marker._map.layerPointToLatLng(iconPos);
+		    shadow = marker._shadow,
+		    iconPos = L.DomUtil.getPosition(marker._icon),
+		    latlng = marker._map.layerPointToLatLng(iconPos);
 
 		// update shadow position
 		if (shadow) {
@@ -47,13 +54,13 @@ L.Handler.MarkerDrag = L.Handler.extend({
 		marker._latlng = latlng;
 
 		marker
-			.fire('move', { latlng: latlng })
-			.fire('drag');
+		    .fire('move', {latlng: latlng})
+		    .fire('drag');
 	},
 
 	_onDragEnd: function () {
 		this._marker
-			.fire('moveend')
-			.fire('dragend');
+		    .fire('moveend')
+		    .fire('dragend');
 	}
 });

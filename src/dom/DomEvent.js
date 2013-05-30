@@ -3,12 +3,12 @@
  */
 
 L.DomEvent = {
-	/* inpired by John Resig, Dean Edwards and YUI addEvent implementations */
+	/* inspired by John Resig, Dean Edwards and YUI addEvent implementations */
 	addListener: function (obj, type, fn, context) { // (HTMLElement, String, Function[, Object])
 
-		var id = L.Util.stamp(fn),
-			key = '_leaflet_' + type + id,
-			handler, originalHandler, newType;
+		var id = L.stamp(fn),
+		    key = '_leaflet_' + type + id,
+		    handler, originalHandler, newType;
 
 		if (obj[key]) { return this; }
 
@@ -18,11 +18,13 @@ L.DomEvent = {
 
 		if (L.Browser.msTouch && type.indexOf('touch') === 0) {
 			return this.addMsTouchListener(obj, type, handler, id);
-		} else if (L.Browser.touch && (type === 'dblclick') && this.addDoubleTapListener) {
-			return this.addDoubleTapListener(obj, handler, id);
+		}
+		if (L.Browser.touch && (type === 'dblclick') && this.addDoubleTapListener) {
+			this.addDoubleTapListener(obj, handler, id);
+		}
 
-		} else if ('addEventListener' in obj) {
-			
+		if ('addEventListener' in obj) {
+
 			if (type === 'mousewheel') {
 				obj.addEventListener('DOMMouseScroll', handler, false);
 				obj.addEventListener(type, handler, false);
@@ -39,12 +41,19 @@ L.DomEvent = {
 
 				obj.addEventListener(newType, handler, false);
 
+			} else if (type === 'click' && L.Browser.android) {
+				originalHandler = handler;
+				handler = function (e) {
+					return L.DomEvent._filterClick(e, originalHandler);
+				};
+
+				obj.addEventListener(type, handler, false);
 			} else {
 				obj.addEventListener(type, handler, false);
 			}
 
 		} else if ('attachEvent' in obj) {
-			obj.attachEvent("on" + type, handler);
+			obj.attachEvent('on' + type, handler);
 		}
 
 		obj[key] = handler;
@@ -54,11 +63,11 @@ L.DomEvent = {
 
 	removeListener: function (obj, type, fn) {  // (HTMLElement, String, Function)
 
-		var id = L.Util.stamp(fn),
-			key = '_leaflet_' + type + id,
-			handler = obj[key];
+		var id = L.stamp(fn),
+		    key = '_leaflet_' + type + id,
+		    handler = obj[key];
 
-		if (!handler) { return; }
+		if (!handler) { return this; }
 
 		if (L.Browser.msTouch && type.indexOf('touch') === 0) {
 			this.removeMsTouchListener(obj, type, id);
@@ -77,7 +86,7 @@ L.DomEvent = {
 				obj.removeEventListener(type, handler, false);
 			}
 		} else if ('detachEvent' in obj) {
-			obj.detachEvent("on" + type, handler);
+			obj.detachEvent('on' + type, handler);
 		}
 
 		obj[key] = null;
@@ -98,9 +107,12 @@ L.DomEvent = {
 	disableClickPropagation: function (el) {
 
 		var stop = L.DomEvent.stopPropagation;
-		
+
+		for (var i = L.Draggable.START.length - 1; i >= 0; i--) {
+			L.DomEvent.addListener(el, L.Draggable.START[i], stop);
+		}
+
 		return L.DomEvent
-			.addListener(el, L.Draggable.START, stop)
 			.addListener(el, 'click', stop)
 			.addListener(el, 'dblclick', stop);
 	},
@@ -122,10 +134,10 @@ L.DomEvent = {
 	getMousePosition: function (e, container) {
 
 		var body = document.body,
-			docEl = document.documentElement,
-			x = e.pageX ? e.pageX : e.clientX + body.scrollLeft + docEl.scrollLeft,
-			y = e.pageY ? e.pageY : e.clientY + body.scrollTop + docEl.scrollTop,
-			pos = new L.Point(x, y);
+		    docEl = document.documentElement,
+		    x = e.pageX ? e.pageX : e.clientX + body.scrollLeft + docEl.scrollLeft,
+		    y = e.pageY ? e.pageY : e.clientY + body.scrollTop + docEl.scrollTop,
+		    pos = new L.Point(x, y);
 
 		return (container ? pos._subtract(L.DomUtil.getViewportOffset(container)) : pos);
 	},
@@ -160,9 +172,8 @@ L.DomEvent = {
 		return (related !== el);
 	},
 
-	/*jshint noarg:false */
 	_getEvent: function () { // evil magic for IE
-
+		/*jshint noarg:false */
 		var e = window.event;
 		if (!e) {
 			var caller = arguments.callee.caller;
@@ -175,8 +186,25 @@ L.DomEvent = {
 			}
 		}
 		return e;
+	},
+
+	// this solves a bug in Android WebView where a single touch triggers two click events.
+	_filterClick: function (e, handler) {
+		var timeStamp = (e.timeStamp || e.originalEvent.timeStamp);
+		var elapsed = L.DomEvent._lastClick && (timeStamp - L.DomEvent._lastClick);
+
+		// are they closer together than 400ms yet more than 100ms?
+		// Android typically triggers them ~300ms apart while multiple listeners
+		// on the same event should be triggered far faster.
+
+		if (elapsed && elapsed > 100 && elapsed < 400) {
+			L.DomEvent.stop(e);
+			return;
+		}
+		L.DomEvent._lastClick = timeStamp;
+
+		return handler(e);
 	}
-	/*jshint noarg:false */
 };
 
 L.DomEvent.on = L.DomEvent.addListener;
