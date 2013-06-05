@@ -65,13 +65,30 @@ L.Mixin.Events = {
         if (!this.hasEventListeners(type)) {
             return false;
         }
+        if (!fn) {
+            return true;
+        }
 
-        for (var i = 0, events = this[key], len = events[type].length; i < len; i++) {
-            if ((!fn || (events[type][i].action === fn)) &&
-                (!context || (events[type][i].context === context))) {
+        var events = this[eventsKey], i, listeners, len;
+
+        if (context) {
+            var contextId = context && L.stamp(context);
+            listeners = events[type + '_idx'][contextId];
+        } else {
+            listeners = events[type] || [];
+            for (i in events[type + '_idx']) {
+                if (events[type + '_idx'].hasOwnProperty(i)) {
+                    listeners = listeners.concat(events[type + '_idx'][i]);
+                }
+            }
+        }
+
+        for (i = 0, len = listeners.length; i < len; i++) {
+            if (listeners[i].action === fn) {
                 return true;
             }
         }
+
         return false;
     },
 

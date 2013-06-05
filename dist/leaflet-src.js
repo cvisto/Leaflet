@@ -382,6 +382,37 @@ L.Mixin.Events = {
 		return !!events && ((type in events && events[type].length > 0) ||
 		                    (type + '_idx' in events && events[type + '_idx_len'] > 0));
 	},
+    
+    hasEventListener: function (/*String*/ type, /*Function*/ fn, /*(optional) Object*/ context) {
+        if (!this.hasEventListeners(type)) {
+            return false;
+        }
+        if (!fn) {
+            return true;
+        }
+
+        var events = this[eventsKey], i, listeners, len;
+
+        if (context) {
+            var contextId = context && L.stamp(context);
+            listeners = events[type + '_idx'][contextId];
+        } else {
+            listeners = events[type];
+            for (i in events[type + '_idx']) {
+                if (events[type + '_idx'].hasOwnProperty(i)) {
+                    listeners.concat(events[type + '_idx'][i]);
+                }
+            }
+        }
+
+        for (i = 0, len = listeners.length; i < len; i++) {
+            if (listeners[i].action === fn) {
+                return true;
+            }
+        }
+
+        return false;
+    },
 
 	removeEventListener: function (types, fn, context) { // ([String, Function, Object]) or (Object[, Object])
 
@@ -5266,6 +5297,8 @@ L.Polyline = L.Path.extend({
 				if (sqDist < minDistance) {
 					minDistance = sqDist;
 					minPoint = L.LineUtil._sqClosestPointOnSegment(p, p1, p2);
+                    minPoint.startSegIndex = i - 1;
+                    minPoint.endSegIndex = i;
 				}
 			}
 		}
@@ -5806,6 +5839,17 @@ L.Circle.include(!L.Path.CANVAS ? {} : {
 		    w2 = this.options.stroke ? this.options.weight / 2 : 0;
 
 		return (p.distanceTo(center) <= this._radius + w2);
+	}
+});
+
+
+/*
+ * CircleMarker canvas specific drawing parts.
+ */
+
+L.CircleMarker.include(!L.Path.CANVAS ? {} : {
+	_updateStyle: function () {
+		L.Path.prototype._updateStyle.call(this);
 	}
 });
 
